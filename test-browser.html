@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZisK WASM STARK Verifier - Browser Example</title>
+    <style>
+        body {
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+            line-height: 1.6;
+        }
+
+        .container {
+            background-color: #2d2d2d;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            color: #4CAF50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h2 {
+            color: #81C784;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 5px;
+        }
+
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+
+        .status.loading {
+            background-color: #FFF3E0;
+            color: #FF8F00;
+            border: 1px solid #FFB74D;
+        }
+
+        .status.success {
+            background-color: #E8F5E8;
+            color: #2E7D32;
+            border: 1px solid #4CAF50;
+        }
+
+        .status.error {
+            background-color: #FFEBEE;
+            color: #C62828;
+            border: 1px solid #F44336;
+        }
+
+        .file-info {
+            background-color: #424242;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-family: monospace;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        button:disabled {
+            background-color: #666;
+            cursor: not-allowed;
+        }
+
+        .file-input {
+            margin: 10px 0;
+        }
+
+        input[type="file"] {
+            background-color: #424242;
+            color: #e0e0e0;
+            padding: 5px;
+            border: 1px solid #666;
+            border-radius: 4px;
+        }
+
+        .log {
+            background-color: #1e1e1e;
+            border: 1px solid #444;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .performance {
+            background-color: #263238;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+
+        .result {
+            font-size: 18px;
+            font-weight: bold;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+            text-align: center;
+        }
+
+        .result.valid {
+            background-color: #1B5E20;
+            color: #4CAF50;
+            border: 2px solid #4CAF50;
+        }
+
+        .result.invalid {
+            background-color: #B71C1C;
+            color: #F44336;
+            border: 2px solid #F44336;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 ZisK WASM STARK Verifier</h1>
+
+    <div class="container">
+        <h2>Browser Integration Example</h2>
+        <p>This example demonstrates how to use the ZisK WASM STARK verifier in a web browser environment.</p>
+
+        <div id="wasmStatus" class="status loading">Loading WASM module...</div>
+    </div>
+
+    <div class="container">
+        <h2>File Selection</h2>
+        <p>Select the proof and verification key files to test verification:</p>
+
+        <div class="file-input">
+            <label for="proofFile"><strong>Proof file (.bin):</strong></label><br>
+            <input type="file" id="proofFile" accept=".bin" />
+            <div id="proofInfo" class="file-info" style="display: none;"></div>
+        </div>
+
+        <div class="file-input">
+            <label for="vkFile"><strong>Verification Key file (.bin):</strong></label><br>
+            <input type="file" id="vkFile" accept=".bin" />
+            <div id="vkInfo" class="file-info" style="display: none;"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>Verification</h2>
+        <button id="verifyBtn" disabled onclick="runVerification()">Run Verification</button>
+        <button id="clearLogBtn" onclick="clearLog()">Clear Log</button>
+
+        <div id="result" class="result" style="display: none;"></div>
+        <div id="performance" class="performance" style="display: none;"></div>
+    </div>
+
+    <div class="container">
+        <h2>Console Output</h2>
+        <div id="log" class="log"></div>
+    </div>
+
+    <script type="module">
+        import init, { main, verify_stark } from './pkg-web/zisk_wasm_stark_verifier.js';
+
+        let wasmModule = null;
+        let proofBytes = null;
+        let vkBytes = null;
+
+        // Log function to display messages in the UI
+        function log(message) {
+            const logElement = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logElement.textContent += `[${timestamp}] ${message}\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+            console.log(message);
+        }
+
+        function clearLog() {
+            document.getElementById('log').textContent = '';
+        }
+
+        function updateStatus(elementId, message, className) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `status ${className}`;
+        }
+
+        function updateFileInfo(elementId, file) {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.innerHTML = `
+                <strong>File:</strong> ${file.name}<br>
+                <strong>Size:</strong> ${file.size.toLocaleString()} bytes<br>
+                <strong>Type:</strong> ${file.type || 'binary'}
+            `;
+        }
+
+        function checkCanVerify() {
+            const canVerify = wasmModule && proofBytes && vkBytes;
+            document.getElementById('verifyBtn').disabled = !canVerify;
+            return canVerify;
+        }
+
+        // Initialize WASM module
+        async function initializeWasm() {
+            try {
+                log('🚀 Initializing WASM module...');
+                wasmModule = await init();
+                log('📦 WASM module loaded, initializing panic hook...');
+                main(); // Initialize panic hook and other setup
+                updateStatus('wasmStatus', '✅ WASM module loaded successfully', 'success');
+                log('✅ WASM module initialized successfully');
+                checkCanVerify();
+            } catch (error) {
+                updateStatus('wasmStatus', `❌ Failed to load WASM module: ${error.message}`, 'error');
+                log(`❌ Error initializing WASM: ${error.message}`);
+                console.error('WASM initialization error:', error);
+            }
+        }
+
+        // File reading helper
+        function readFileAsArrayBuffer(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(new Uint8Array(e.target.result));
+                reader.onerror = (e) => reject(new Error(`Failed to read file: ${e.target.error}`));
+                reader.readAsArrayBuffer(file);
+            });
+        }
+
+        // File input handlers
+        document.getElementById('proofFile').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                try {
+                    log(`📄 Loading proof file: ${file.name}`);
+                    proofBytes = await readFileAsArrayBuffer(file);
+                    updateFileInfo('proofInfo', file);
+                    log(`✅ Proof file loaded: ${proofBytes.length} bytes`);
+                    checkCanVerify();
+                } catch (error) {
+                    log(`❌ Error loading proof file: ${error.message}`);
+                }
+            }
+        });
+
+        document.getElementById('vkFile').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                try {
+                    log(`🔑 Loading verification key file: ${file.name}`);
+                    vkBytes = await readFileAsArrayBuffer(file);
+                    updateFileInfo('vkInfo', file);
+                    log(`✅ Verification key loaded: ${vkBytes.length} bytes`);
+                    checkCanVerify();
+                } catch (error) {
+                    log(`❌ Error loading verification key file: ${error.message}`);
+                }
+            }
+        });
+
+        // Main verification function
+        window.runVerification = async function() {
+            if (!checkCanVerify()) {
+                log('❌ Cannot run verification: missing WASM module, proof, or verification key');
+                return;
+            }
+
+            const resultElement = document.getElementById('result');
+            const performanceElement = document.getElementById('performance');
+
+            try {
+                log('🔍 Starting verification...');
+                log(`📊 Proof size: ${proofBytes.length.toLocaleString()} bytes`);
+                log(`📊 VK size: ${vkBytes.length.toLocaleString()} bytes`);
+
+                const startTime = performance.now();
+                const result = verify_stark(proofBytes, vkBytes);
+                const endTime = performance.now();
+                const duration = endTime - startTime;
+
+                // Display result
+                resultElement.style.display = 'block';
+                resultElement.className = `result ${result ? 'valid' : 'invalid'}`;
+                resultElement.textContent = result ? '✅ PROOF VALID' : '❌ PROOF INVALID';
+
+                // Display performance metrics
+                performanceElement.style.display = 'block';
+                performanceElement.innerHTML = `
+                    <strong>⏱️ Performance Metrics:</strong><br>
+                    Verification time: ${duration.toFixed(2)} milliseconds<br>
+                    Throughput: ${((proofBytes.length + vkBytes.length) / 1024 / (duration / 1000)).toFixed(2)} KB/s
+                `;
+
+                log(`✅ Verification completed: ${result ? 'VALID' : 'INVALID'}`);
+                log(`⏱️ Time taken: ${duration.toFixed(2)} milliseconds`);
+
+            } catch (error) {
+                resultElement.style.display = 'block';
+                resultElement.className = 'result invalid';
+                resultElement.textContent = `❌ VERIFICATION ERROR: ${error.message}`;
+
+                log(`❌ Verification error: ${error.message}`);
+                console.error('Verification error:', error);
+            }
+        };
+
+        // Initialize on page load
+        initializeWasm();
+
+        // Add some helpful information
+        log('🌐 ZisK WASM STARK Verifier browser example loaded');
+        log('📝 Instructions:');
+        log('   1. Wait for WASM module to load');
+        log('   2. Select a proof file (.bin)');
+        log('   3. Select a verification key file (.bin)');
+        log('   4. Click "Run Verification"');
+        log('');
+        log('💡 Tip: You can use the proof and verification key files from the proofs/ and riscv-vks/ directories');
+    </script>
+</body>
+</html>

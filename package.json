@@ -1,0 +1,62 @@
+{
+  "name": "@ethproofs/zisk-wasm-stark-verifier",
+  "version": "0.1.0",
+  "description": "WASM wrapper for ZisK STARK verifier - verify STARK proofs in browsers and Node.js",
+  "type": "module",
+  "main": "pkg/zisk_wasm_stark_verifier.js",
+  "module": "pkg/zisk_wasm_stark_verifier.js",
+  "types": "pkg/zisk_wasm_stark_verifier.d.ts",
+  "exports": {
+    ".": {
+      "types": "./pkg/zisk_wasm_stark_verifier.d.ts",
+      "import": "./pkg/zisk_wasm_stark_verifier.js",
+      "require": "./pkg/zisk_wasm_stark_verifier.js"
+    },
+    "./pkg/*": "./pkg/*"
+  },
+  "files": [
+    "pkg/",
+    "README.md",
+    "test-browser.html",
+    "test-serve.mjs"
+  ],
+  "scripts": {
+    "build": "wasm-pack build --target bundler --out-dir pkg",
+    "build:node": "wasm-pack build --target nodejs --out-dir pkg-node",
+    "build:web": "wasm-pack build --target web --out-dir pkg-web",
+    "build:all": "npm run build && npm run build:node && npm run build:web",
+    "test": "npm run build && node test-serve.mjs",
+    "test:node": "npm run build:node && node test-node.mjs"
+  },
+  "keywords": [
+    "wasm",
+    "webassembly",
+    "stark",
+    "verifier",
+    "zisk",
+    "zero-knowledge",
+    "zk",
+    "proof",
+    "blockchain",
+    "cryptography"
+  ],
+  "author": "Ethproofs",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ethproofs/zisk-wasm-stark-verifier"
+  },
+  "homepage": "https://github.com/ethproofs/zisk-wasm-stark-verifier#readme",
+  "bugs": {
+    "url": "https://github.com/ethproofs/zisk-wasm-stark-verifier/issues"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "wasm-pack": "^0.0.0"
+  }
+}
