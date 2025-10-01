@@ -26,7 +26,7 @@ async function testVerification() {
     console.log(`  VK size: ${kbVkBytes.length} bytes`);
 
     // Test verification
-    console.log('\n🔍 Verifying Zisk 18885301 block proof...');
+    console.log('\n🔍 Verifying Zisk block proof...');
     const start = performance.now();
     const kbResult = verify_stark(kbProofBytes, kbVkBytes);
     const end = performance.now();
