@@ -1,6 +1,6 @@
 {
   "name": "@ethproofs/zisk-wasm-stark-verifier",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "WASM wrapper for ZisK STARK verifier - verify STARK proofs in browsers and Node.js",
   "type": "module",
   "main": "pkg/zisk_wasm_stark_verifier.js",
