@@ -15,7 +15,7 @@ async function testVerification() {
     console.log('✅ WASM module initialized\n');
 
     // Load eth block proof and verification key
-    const kbProofPath = path.join(__dirname, 'proofs', 'zisk.proof.ethproofs.bin');
+    const kbProofPath = path.join(__dirname, 'proofs', 'zisk.proof.bin');
     const kbVkPath = path.join(__dirname, 'vks', 'zisk.vk.bin');
 
     console.log('\nLoading eth proof and verification key...');
