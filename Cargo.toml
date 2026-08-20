@@ -9,7 +9,7 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-proofman-verifier = { git = "https://github.com/0xPolygonHermez/pil2-proofman.git", tag = "v0.18.0" }
+zisk-verifier = { git = "https://github.com/0xPolygonHermez/zisk.git", tag = "v1.1.0-alpha" }
 
 # Wasm bindings
 wasm-bindgen = "0.2"
