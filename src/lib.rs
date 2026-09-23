@@ -4,16 +4,17 @@
 //! writes with `--proof.save` and base64-encodes for EthProofs:
 //!
 //! ```text
-//! [minimal(1)][n_publics(1)][flag?|program_vk(4)|inputs(64)][proof(..)][vk(4)]
+//! [minimal(1)][n_publics(1)][flag?|program_vk(4)|inputs(64)][proof(..)][vk(4)][hash_tag(1)]
 //! ```
 //!
 //! `verify_vadcop_final_proof` validates that header itself, so all this module
-//! does is split the trailing key off the tail.
+//! does is split the trailing key and hash-family tag off the tail.
 
 use wasm_bindgen::prelude::*;
-use zisk_verifier::{verify_vadcop_final_proof, VADCOP_VK_LEN_WORDS};
+use zisk_verifier::{
+    hash_id_from_tag, verify_vadcop_final_proof, HASH_TAG_LEN_WORDS, VADCOP_VK_LEN_WORDS,
+};
 
-const HASH: &str = "Poseidon1";
 const VK_BYTES: usize = VADCOP_VK_LEN_WORDS * 8;
 
 #[wasm_bindgen(start)]
@@ -27,7 +28,8 @@ pub fn main() {
 ///
 /// The key the prover appends to the proof is discarded: a proof checked against
 /// the key it ships with proves only that it is internally consistent, so the key
-/// has to be pinned by the caller.
+/// has to be pinned by the caller. The trailing hash tag only selects which verifier
+/// runs: a wrong tag fails against `vk_bytes`.
 #[wasm_bindgen]
 pub fn verify_stark(proof_bytes: &[u8], vk_bytes: &[u8]) -> Result<bool, JsValue> {
     if vk_bytes.len() != VK_BYTES {
@@ -46,11 +48,14 @@ pub fn verify_stark(proof_bytes: &[u8], vk_bytes: &[u8]) -> Result<bool, JsValue
     let mut proof = to_words(proof_bytes);
     let len = proof
         .len()
-        .checked_sub(VADCOP_VK_LEN_WORDS)
+        .checked_sub(VADCOP_VK_LEN_WORDS + HASH_TAG_LEN_WORDS)
         .ok_or_else(|| JsValue::from_str("proof too short"))?;
+    let tag = proof[proof.len() - 1];
+    let hash = hash_id_from_tag(tag)
+        .ok_or_else(|| JsValue::from_str(&format!("unrecognized hash tag {tag}")))?;
     proof.truncate(len);
 
-    Ok(verify_vadcop_final_proof(&proof, &to_words(vk_bytes), HASH))
+    Ok(verify_vadcop_final_proof(&proof, &to_words(vk_bytes), hash))
 }
 
 fn to_words(bytes: &[u8]) -> Vec<u64> {

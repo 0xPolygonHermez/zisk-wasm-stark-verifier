@@ -9,7 +9,7 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-zisk-verifier = { git = "https://github.com/0xPolygonHermez/zisk.git", tag = "v1.1.0-alpha" }
+zisk-verifier = { git = "https://github.com/0xPolygonHermez/zisk.git", tag = "v1.3.0-alpha" }
 
 # Wasm bindings
 wasm-bindgen = "0.2"
