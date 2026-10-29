@@ -9,9 +9,9 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-# Local: ZisK's feat/verify-proof-format branch (one proof format, release keys).
-zisk-verifier = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-1.4.0-alpha" }
-# zisk-verifier = { git = "https://github.com/0xPolygonHermez/zisk.git", tag = "v1.4.0-alpha" }
+# zisk-verifier = { git = "https://github.com/0xPolygonHermez/zisk.git", branch = "pre-develop-1.4.0-alpha", version = "1.4.0-alpha" }
+
+zisk-verifier = "1.4.0-alpha"
 
 # Wasm bindings
 wasm-bindgen = "0.2"
